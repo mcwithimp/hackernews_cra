@@ -139,9 +139,10 @@ class App extends Component<Props, State> {
 
   render() {
     const { searchTerm, searchKey } = this.state;
-    const results = this.state.status === 'success' ? this.state.results : {};
-    const hits = results[searchKey]?.hits ?? [];
-    const page = results[searchKey]?.page ?? 0;
+    const results =
+      this.state.status === 'empty' ? undefined : this.state.results;
+    const hits = (results && results[searchKey]?.hits) ?? [];
+    const page = (results && results[searchKey]?.page) ?? 0;
 
     return (
       <div className="page">
@@ -155,19 +156,15 @@ class App extends Component<Props, State> {
           </Search>
         </div>
         {this.state.status === 'error' && <strong>{this.state.error}</strong>}
-        {this.state.status === 'success' && (
-          <div>
-            <Table list={hits} onDismiss={this.onDismiss} />
-            <div className="interactions">
-              <Button
-                onClick={() => this.fetchSearchTopStories(searchKey, page + 1)}
-              >
-                More
-              </Button>
-            </div>
-          </div>
-        )}
+        {results && <Table list={hits} onDismiss={this.onDismiss} />}
         {this.state.status === 'loading' && <div>Loading ...</div>}
+        <div className="interactions">
+          <Button
+            onClick={() => this.fetchSearchTopStories(searchKey, page + 1)}
+          >
+            More
+          </Button>
+        </div>
       </div>
     );
   }
