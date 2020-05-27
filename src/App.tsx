@@ -44,32 +44,19 @@ type State =
 
 type EventHandler<T, U> = (event: T) => U;
 
-class App extends Component<Props, State> {
+class App extends Component {
   _isMounted = false;
   source = axios.CancelToken.source();
-  constructor(props: Props) {
-    super(props);
-    this.state = {
-      status: 'empty',
-      searchTerm: DEFAULT_QUERY,
-      searchKey: '',
-    };
+  state: State = { status: 'empty', searchTerm: DEFAULT_QUERY, searchKey: '' };
 
-    this.needsToSearchTopStories = this.needsToSearchTopStories.bind(this);
-    this.setSearchTopStories = this.setSearchTopStories.bind(this);
-    this.fetchSearchTopStories = this.fetchSearchTopStories.bind(this);
-    this.onSearchChange = this.onSearchChange.bind(this);
-    this.onSearchSubmit = this.onSearchSubmit.bind(this);
-    this.onDismiss = this.onDismiss.bind(this);
-  }
-
-  needsToSearchTopStories(searchTerm: string) {
+  // doent need to bind a method in a contructor
+  needsToSearchTopStories = (searchTerm: string) => {
     const results =
       this.state.status === 'empty' ? undefined : this.state.results;
     return !(results && results[searchTerm]);
-  }
+  };
 
-  setSearchTopStories(result: HNResult) {
+  setSearchTopStories = (result: HNResult) => {
     const { hits, page } = result;
     const { searchKey } = this.state;
     const results =
@@ -88,9 +75,9 @@ class App extends Component<Props, State> {
         },
       },
     });
-  }
+  };
 
-  fetchSearchTopStories(searchTerm: string, page = 0) {
+  fetchSearchTopStories = (searchTerm: string, page = 0) => {
     const url = `${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${searchTerm}&${PARAM_PAGE}${page}&${PARAM_HPP}${DEFAULT_HPP}`;
     this.setState({ status: 'loading' });
     axios
@@ -113,7 +100,7 @@ class App extends Component<Props, State> {
           });
         }
       });
-  }
+  };
 
   componentDidMount() {
     this._isMounted = true;
@@ -128,11 +115,11 @@ class App extends Component<Props, State> {
     this.source.cancel();
   }
 
-  onSearchChange(event: ChangeEvent<HTMLInputElement>) {
+  onSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
     this.setState({ searchTerm: event.target.value });
-  }
+  };
 
-  onSearchSubmit(event: FormEvent<HTMLFormElement>) {
+  onSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
     const { searchTerm } = this.state;
     event.preventDefault();
     this.setState({ searchKey: searchTerm });
@@ -142,9 +129,9 @@ class App extends Component<Props, State> {
     } else {
       this.setState({ status: 'success' });
     }
-  }
+  };
 
-  onDismiss(id: string) {
+  onDismiss = (id: string) => {
     const { searchKey } = this.state;
     const results = this.state.status === 'success' ? this.state.results : {};
     const isNotId = (item: HIT) => item.objectID !== id;
@@ -161,7 +148,7 @@ class App extends Component<Props, State> {
         },
       },
     });
-  }
+  };
 
   render() {
     const { searchTerm, searchKey } = this.state;
