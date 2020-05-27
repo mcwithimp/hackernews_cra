@@ -1,17 +1,16 @@
 import React, { Component, ChangeEvent, ReactNode, FormEvent } from 'react';
 import axios from 'axios';
-import './App.css';
-
-const DEFAULT_QUERY = 'redux';
-const DEFAULT_HPP = '100';
-
-const PATH_BASE = 'https://hn.algolia.com/api/v1';
-const PATH_SEARCH = '/search';
-const PARAM_SEARCH = 'query=';
-const PARAM_PAGE = 'page=';
-const PARAM_HPP = 'hitsPerPage=';
-
-type Props = {};
+import './index.css';
+import Button from '../Button';
+import {
+  DEFAULT_QUERY,
+  DEFAULT_HPP,
+  PATH_BASE,
+  PATH_SEARCH,
+  PARAM_SEARCH,
+  PARAM_PAGE,
+  PARAM_HPP,
+} from '../contants';
 
 type HIT = {
   title: string;
@@ -223,17 +222,6 @@ const Table = ({ list, onDismiss }: TableProps) => (
       </div>
     ))}
   </div>
-);
-
-type ButtonProps = {
-  onClick: () => void;
-  className?: string;
-  children: ReactNode;
-};
-const Button = ({ onClick, className = '', children }: ButtonProps) => (
-  <button onClick={onClick} className={className} type="button">
-    {children}
-  </button>
 );
 
 export default App;
