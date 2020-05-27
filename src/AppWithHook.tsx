@@ -43,7 +43,7 @@ const App = () => {
 
   useEffect(() => {
     fetchSearchTopstories(searchTerm);
-  });
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('search', searchTerm);

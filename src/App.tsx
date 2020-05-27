@@ -10,37 +10,49 @@ const PARAM_SEARCH = 'query=';
 const PARAM_PAGE = 'page=';
 const PARAM_HPP = 'hitsPerPage=';
 
-type AppProps = {};
+type Props = {};
 
-interface HIT {
+type HIT = {
   title: string;
   url: string;
   author: string;
   num_comments: number;
   points: number;
   objectID: string;
-}
+};
 
-interface HNResult {
+type HNResults = {
+  [key: string]: HNResult;
+};
+
+type HNResult = {
   hits: HIT[];
   page: number;
-}
-
-type AppState = {
-  result: HNResult | undefined;
-  searchTerm: string;
 };
+
+type Search = {
+  searchTerm: string;
+  searchKey: string;
+};
+
+type State =
+  | (Search & { status: 'empty' })
+  | (Search & { status: 'loading'; results: HNResults })
+  | (Search & { status: 'error'; results: HNResults; error: string })
+  | (Search & { status: 'success'; results: HNResults });
 
 type EventHandler<T, U> = (event: T) => U;
 
-class App extends Component<AppProps, AppState> {
-  constructor(props: AppProps) {
+class App extends Component<Props, State> {
+  constructor(props: Props) {
     super(props);
     this.state = {
-      result: undefined,
+      status: 'empty',
       searchTerm: DEFAULT_QUERY,
+      searchKey: '',
     };
 
+    this.needsToSearchTopStories = this.needsToSearchTopStories.bind(this);
     this.setSearchTopStories = this.setSearchTopStories.bind(this);
     this.fetchSearchTopStories = this.fetchSearchTopStories.bind(this);
     this.onSearchChange = this.onSearchChange.bind(this);
@@ -48,25 +60,45 @@ class App extends Component<AppProps, AppState> {
     this.onDismiss = this.onDismiss.bind(this);
   }
 
+  needsToSearchTopStories(searchTerm: string) {
+    const results =
+      this.state.status === 'empty' ? undefined : this.state.results;
+    return !(results && results[searchTerm]);
+  }
+
   setSearchTopStories(result: HNResult) {
     const { hits, page } = result;
-
-    const oldHits = page === 0 ? [] : this.state.result!.hits;
-    const newHits = [...oldHits, ...hits];
-
-    this.setState({ result: { hits: newHits, page } });
+    const { searchKey } = this.state;
+    const results =
+      this.state.status === 'empty' ? undefined : this.state.results;
+    const oldHits =
+      results && results[searchKey] ? results[searchKey].hits : [];
+    const updatedHits = [...oldHits, ...hits];
+    this.setState({
+      ...this.state,
+      status: 'success',
+      results: {
+        ...results,
+        [searchKey]: {
+          hits: updatedHits,
+          page,
+        },
+      },
+    });
   }
 
   fetchSearchTopStories(searchTerm: string, page = 0) {
     const url = `${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${searchTerm}&${PARAM_PAGE}${page}&${PARAM_HPP}${DEFAULT_HPP}`;
+    this.setState({ status: 'loading' });
     fetch(url)
       .then(res => res.json())
-      .then((result: HNResult) => this.setSearchTopStories(result))
-      .catch(e => e);
+      .then(result => this.setSearchTopStories(result))
+      .catch(e => alert(e));
   }
 
   componentDidMount() {
     const { searchTerm } = this.state;
+    this.setState({ ...this.state, searchKey: searchTerm });
     this.fetchSearchTopStories(searchTerm);
   }
 
@@ -77,20 +109,39 @@ class App extends Component<AppProps, AppState> {
   onSearchSubmit(event: FormEvent<HTMLFormElement>) {
     const { searchTerm } = this.state;
     event.preventDefault();
-    this.fetchSearchTopStories(searchTerm);
+    this.setState({ searchKey: searchTerm });
+
+    if (this.needsToSearchTopStories(searchTerm)) {
+      this.fetchSearchTopStories(searchTerm);
+    } else {
+      this.setState({ status: 'success' });
+    }
   }
 
   onDismiss(id: string) {
+    const { searchKey } = this.state;
+    const results = this.state.status === 'success' ? this.state.results : {};
     const isNotId = (item: HIT) => item.objectID !== id;
-    const updatedList = this.state.result!.hits.filter(isNotId);
+    const { hits, page } = results[searchKey];
+    const updatedList = hits.filter(isNotId);
     this.setState({
-      result: { ...this.state.result!, hits: updatedList },
+      ...this.state,
+      status: 'success',
+      results: {
+        ...results,
+        [searchKey]: {
+          hits: updatedList,
+          page,
+        },
+      },
     });
   }
 
   render() {
-    const { searchTerm, result } = this.state;
-    const page = (result && result.page) ?? 0;
+    const { searchTerm, searchKey } = this.state;
+    const results = this.state.status === 'success' ? this.state.results : {};
+    const hits = results[searchKey]?.hits ?? [];
+    const page = results[searchKey]?.page ?? 0;
 
     return (
       <div className="page">
@@ -103,14 +154,20 @@ class App extends Component<AppProps, AppState> {
             Search
           </Search>
         </div>
-        {result && <Table list={result.hits} onDismiss={this.onDismiss} />}
-        <div className="interactions">
-          <Button
-            onClick={() => this.fetchSearchTopStories(searchTerm, page + 1)}
-          >
-            More
-          </Button>
-        </div>
+        {this.state.status === 'error' && <strong>{this.state.error}</strong>}
+        {this.state.status === 'success' && (
+          <div>
+            <Table list={hits} onDismiss={this.onDismiss} />
+            <div className="interactions">
+              <Button
+                onClick={() => this.fetchSearchTopStories(searchKey, page + 1)}
+              >
+                More
+              </Button>
+            </div>
+          </div>
+        )}
+        {this.state.status === 'loading' && <div>Loading ...</div>}
       </div>
     );
   }
