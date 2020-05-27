@@ -43,6 +43,7 @@ const App = () => {
 
   useEffect(() => {
     fetchSearchTopstories(searchTerm);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

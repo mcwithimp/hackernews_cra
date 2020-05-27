@@ -1,7 +1,9 @@
-import React, { Component, ChangeEvent, ReactNode, FormEvent } from 'react';
+import React, { Component, ChangeEvent, FormEvent } from 'react';
 import axios from 'axios';
 import './index.css';
 import Button from '../Button';
+import Table from '../Table';
+import Search from '../Search';
 import {
   DEFAULT_QUERY,
   DEFAULT_HPP,
@@ -10,36 +12,23 @@ import {
   PARAM_SEARCH,
   PARAM_PAGE,
   PARAM_HPP,
+  HIT,
+  HNResults,
+  HNResult,
 } from '../contants';
 
-type HIT = {
-  title: string;
-  url: string;
-  author: string;
-  num_comments: number;
-  points: number;
-  objectID: string;
-};
-
-type HNResults = {
-  [key: string]: HNResult;
-};
-
-type HNResult = {
-  hits: HIT[];
-  page: number;
-};
-
-type Search = {
+type SearchInput = {
   searchTerm: string;
   searchKey: string;
 };
 
-type State =
-  | (Search & { status: 'empty' })
-  | (Search & { status: 'loading'; results: HNResults })
-  | (Search & { status: 'error'; results: HNResults; error: string })
-  | (Search & { status: 'success'; results: HNResults });
+type State = SearchInput &
+  (
+    | { status: 'empty' }
+    | { status: 'loading'; results: HNResults }
+    | { status: 'error'; results: HNResults; error: string }
+    | { status: 'success'; results: HNResults }
+  );
 
 type EventHandler<T, U> = (event: T) => U;
 
@@ -183,45 +172,5 @@ class App extends Component {
     );
   }
 }
-
-type SearchProps = {
-  value: string;
-  onChange: (event: ChangeEvent<HTMLInputElement>) => void;
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
-  children: ReactNode;
-};
-const Search = ({ value, onChange, onSubmit, children }: SearchProps) => (
-  <form onSubmit={onSubmit}>
-    <input type="text" value={value} onChange={onChange} />
-    <button type="submit">{children}</button>
-  </form>
-);
-
-type TableProps = {
-  list: HIT[];
-  onDismiss: (id: string) => void;
-};
-const Table = ({ list, onDismiss }: TableProps) => (
-  <div className="table">
-    {list.map(item => (
-      <div key={item.objectID} className="table-row">
-        <span style={{ width: '40%' }}>
-          <a href={item.url}>{item.title}</a>
-        </span>
-        <span style={{ width: '30%' }}>{item.author}</span>
-        <span style={{ width: '10%' }}>{item.num_comments}</span>
-        <span style={{ width: '10%' }}>{item.points}</span>
-        <span style={{ width: '10%' }}>
-          <Button
-            onClick={() => onDismiss(item.objectID)}
-            className="button-inline"
-          >
-            Dismiss
-          </Button>
-        </span>
-      </div>
-    ))}
-  </div>
-);
 
 export default App;

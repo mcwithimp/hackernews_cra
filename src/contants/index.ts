@@ -5,3 +5,21 @@ export const PATH_SEARCH = '/search';
 export const PARAM_SEARCH = 'query=';
 export const PARAM_PAGE = 'page=';
 export const PARAM_HPP = 'hitsPerPage=';
+
+export type HIT = {
+  title: string;
+  url: string;
+  author: string;
+  num_comments: number;
+  points: number;
+  objectID: string;
+};
+
+export type HNResults = {
+  [key: string]: HNResult;
+};
+
+export type HNResult = {
+  hits: HIT[];
+  page: number;
+};
