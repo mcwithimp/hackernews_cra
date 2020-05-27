@@ -1,4 +1,5 @@
 import React, { Component, ChangeEvent, ReactNode, FormEvent } from 'react';
+import axios from 'axios';
 import './App.css';
 
 const DEFAULT_QUERY = 'redux';
@@ -44,6 +45,8 @@ type State =
 type EventHandler<T, U> = (event: T) => U;
 
 class App extends Component<Props, State> {
+  _isMounted = false;
+  source = axios.CancelToken.source();
   constructor(props: Props) {
     super(props);
     this.state = {
@@ -90,16 +93,39 @@ class App extends Component<Props, State> {
   fetchSearchTopStories(searchTerm: string, page = 0) {
     const url = `${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${searchTerm}&${PARAM_PAGE}${page}&${PARAM_HPP}${DEFAULT_HPP}`;
     this.setState({ status: 'loading' });
-    fetch(url)
-      .then(res => res.json())
-      .then(result => this.setSearchTopStories(result))
-      .catch(e => alert(e));
+    axios
+      .get(url, { cancelToken: this.source.token })
+      .then(result => {
+        //avoid calling this.setState() on an unmounted component.
+        // this._isMounted && this.setSearchTopStories(result.data);
+        this.setSearchTopStories(result.data);
+      })
+      .catch(error => {
+        if (axios.isCancel(error)) {
+          // request canceld
+        } else {
+          // handle error
+          // this._isMounted &&
+          this.setState({
+            ...this.state,
+            status: 'error',
+            error: error.stack,
+          });
+        }
+      });
   }
 
   componentDidMount() {
+    this._isMounted = true;
     const { searchTerm } = this.state;
     this.setState({ ...this.state, searchKey: searchTerm });
     this.fetchSearchTopStories(searchTerm);
+  }
+
+  componentWillUnmount() {
+    // aborting the pending request
+    // this._isMounted = false;
+    this.source.cancel();
   }
 
   onSearchChange(event: ChangeEvent<HTMLInputElement>) {
@@ -158,13 +184,15 @@ class App extends Component<Props, State> {
         {this.state.status === 'error' && <strong>{this.state.error}</strong>}
         {results && <Table list={hits} onDismiss={this.onDismiss} />}
         {this.state.status === 'loading' && <div>Loading ...</div>}
-        <div className="interactions">
-          <Button
-            onClick={() => this.fetchSearchTopStories(searchKey, page + 1)}
-          >
-            More
-          </Button>
-        </div>
+        {results && (
+          <div className="interactions">
+            <Button
+              onClick={() => this.fetchSearchTopStories(searchKey, page + 1)}
+            >
+              More
+            </Button>
+          </div>
+        )}
       </div>
     );
   }
